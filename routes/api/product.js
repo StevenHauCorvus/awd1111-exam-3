@@ -12,7 +12,7 @@ import Joi from 'joi';
 const router = express.Router();
 
 
-const newUserSchema = Joi.object({
+const UserSchema = Joi.object({
     name: Joi.string().trim().min(1).max(50).required(),
     description: Joi.string().trim().min(1).max(50).required(),
     category: Joi.string().valid('Cleaning Product').trim().min(1).max(50).required(),
@@ -112,7 +112,7 @@ router.get('/id/:productId',validId('productId'), async (req, res) => {
 
 //Get Product by Name in URL
 router.get('/name/:productName',validName('productName'), async (req, res) => {
-    const productName = req.params.productName; // Get the product name from the request parameters
+    const productName = req.productName; // Get the product name from the request parameters
   
     try {
       // Call the getProductByName function to retrieve the product by name
@@ -133,7 +133,7 @@ router.get('/name/:productName',validName('productName'), async (req, res) => {
   });
 
 //Create new Product
-  router.post('/new',validBody(newUserSchema),async (req, res) => {
+  router.post('/new',validBody(UserSchema),async (req, res) => {
     try {
       const newProduct = req.body;
   
@@ -147,7 +147,7 @@ router.get('/name/:productName',validName('productName'), async (req, res) => {
   });
 
 //Update Product
-  router.put('/:productId',validId('productId'),validBody(newUserSchema), async (req, res) => {
+  router.put('/:productId',validId('productId'),validBody(UserSchema), async (req, res) => {
     const productId = req.params.productId; // Get the product ID from the request parameters
     const updateData = req.body; // Get the update data from the request body
   
