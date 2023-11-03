@@ -62,12 +62,12 @@ const loginSchema = Joi.object({
 
 
 const registerSchema = Joi.object({
-  email:Joi.string().trim().min(1).max(50),
+  email:Joi.string().trim().min(1).max(50).required(),
   password:Joi.string().trim().min(1).max(50).required(),
-  fullName:Joi.string().trim().min(1).max(50),
-  givenName:Joi.string().trim().min(1).max(50),
-  familyName:Joi.string().trim().min(1).max(50),
-  role:Joi.string().trim().min(1).max(50),
+  fullName:Joi.string().trim().min(1).max(50).required(),
+  givenName:Joi.string().trim().min(1).max(50).required(),
+  familyName:Joi.string().trim().min(1).max(50).required(),
+  role:Joi.string().trim().min(1).max(50).required(),
  
   
 });
