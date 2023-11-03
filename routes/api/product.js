@@ -7,9 +7,44 @@ import { connect,getProduct,getProductById,getProductByName,createNewProduct,upd
 import {validId} from '../../middleware/validId.js';
 import {validBody} from '../../middleware/validBody.js';
 import {validName} from '../../middleware/validName.js';
+
+
+import { isLoggedIn, fetchRoles, mergePermissions, hasRole } from '@merlin4/express-auth';
 import Joi from 'joi';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+
+async function issueAuthToken(user){
+  const payload = {
+    _id: user._id, 
+    email: user.email, 
+    role: user.role};
+
+  const secret = process.env.JWT_SECRET;
+  const options = {expiresIn:'1h'};
+
+
+  const roles = await fetchRoles(user, role => findRoleByName(role));
+
+  // roles.forEach(role => {
+  //     debugUser(`The users role is ${(role.name)} and has the following permissions: ${JSON.stringify(role.permissions)}`);
+  // });
+
+  const permissions = mergePermissions(user, roles);
+  payload.permissions = permissions;
+
+  //debugUser(`The users permissions are ${permissions}`);
+
+  const authToken = jwt.sign(payload, secret, options);
+  return authToken;
+}
+
+
+function issueAuthCookie(res, authToken){
+  const cookieOptions = {httpOnly:true,maxAge:1000*60*60};
+  res.cookie('authToken',authToken,cookieOptions);
+}
 
 
 const UserSchema = Joi.object({
@@ -23,15 +58,15 @@ const UserSchema = Joi.object({
 //get all Products
 router.get('/list', async (req, res) => {
 
-    debugBook(`Getting all books, the query string is ${JSON.stringify(req.query)}`);
-    let {keywords,minsPrice,maxPrice,genre,sortBy,pageSize,pageNumber} = req.query;
+    debugBook(`Getting all products, the query string is ${JSON.stringify(req.query)}`);
+    let {keywords,minsPrice,maxPrice,category,sortBy,pageSize,pageNumber} = req.query;
     const match = {};   
     let sort = {author: 1};
 
 
     try {
-        if (genre) {
-           match.genre = genre;
+        if (category) {
+           match.category = category;
         }
 
         if (keywords) {
@@ -52,8 +87,9 @@ router.get('/list', async (req, res) => {
         }
 
         switch(sortBy){
-            case 'price': sort = {price : 1}; break;
-            case 'year': sort = {publication_year : 1}; break;
+            case 'name': sort = {name : 1}; break;
+            case 'category': sort = {category : 1}; break;
+         
 
         }
 
@@ -133,7 +169,7 @@ router.get('/name/:productName',validName('productName'), async (req, res) => {
   });
 
 //Create new Product
-  router.post('/new',validBody(UserSchema),async (req, res) => {
+  router.post('/new',validBody(UserSchema),hasRole('admin'),async (req, res) => {
     try {
       const newProduct = req.body;
   
@@ -147,7 +183,7 @@ router.get('/name/:productName',validName('productName'), async (req, res) => {
   });
 
 //Update Product
-  router.put('/:productId',validId('productId'),validBody(UserSchema), async (req, res) => {
+  router.put('/:productId',validId('productId'),validBody(UserSchema),hasRole('admin'), async (req, res) => {
     const productId = req.params.productId; // Get the product ID from the request parameters
     const updateData = req.body; // Get the update data from the request body
   
@@ -169,7 +205,7 @@ router.get('/name/:productName',validName('productName'), async (req, res) => {
   });
 
 //delete Product
-  router.delete('/:productId',validId('productId'), async (req, res) => {
+  router.delete('/:productId',validId('productId'),hasRole('admin'), async (req, res) => {
     const productId = req.params.productId; // Get the product ID from the request parameters
   
     try {
